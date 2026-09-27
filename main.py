@@ -218,4 +218,6 @@ async def kayit_et(ctx, member: discord.Member = None):
     await ctx.reply(content=f"📋 {member.mention} kullanıcısı için **Kayıt Türünü** seçiniz:", view=view)
 
 # Botu Başlatmaq
-bot.run("MTU1MzcwMzM2MTAxMjk1NzI1Ng.GzX06M.p7WIk9Eid9loRmQ0mMAAEBujN-Px-2RFYKj5UM")
+import os
+
+bot.run(os.getenv("DISCORD_TOKEN"))
