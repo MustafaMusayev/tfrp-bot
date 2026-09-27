@@ -36,6 +36,17 @@ async def on_ready():
     await bot.tree.sync()
     print(f'{bot.user} başarıyla aktif oldu!')
 
+# SUNUCUYA YENİ BİRİ KATILDIĞINDA OTOMATİK KAYITSIZ ROLÜ VERME
+@bot.event
+async def on_member_join(member):
+    kayitsiz_rol = member.guild.get_role(KAYITSIZ_ID)
+    if kayitsiz_rol:
+        try:
+            await member.add_roles(kayitsiz_rol)
+            print(f"{member.name} sunucuya katıldı ve Kayıtsız rolü verildi.")
+        except Exception as e:
+            print(f"Kayıtsız rolü verilirken hata oluştu: {e}")
+
 # Yetki Kontrol Fonksiyonu
 def yetkili_mi(interaction: discord.Interaction) -> bool:
     yetkili_rol = interaction.guild.get_role(KAYIT_YETKILISI_ID)
@@ -56,7 +67,6 @@ async def kayit(interaction: discord.Interaction, üye: discord.Member, isim: st
     verilecek_rol = interaction.guild.get_role(FUTBOLCU_ID if rol_tipi.value == "futbolcu" else UYE_ID)
 
     try:
-        # İsim aynen girildiği gibi ayarlanıyor (Hiçbir değer eklenmez)
         await üye.edit(nick=isim)
         
         if kayitsiz_rol in üye.roles:
@@ -99,7 +109,6 @@ async def td_kayit(interaction: discord.Interaction, üye: discord.Member, isim:
         if kayitsiz_rol in üye.roles:
             await üye.remove_roles(kayitsiz_rol)
             
-        # Hem TD Rolünü hem de Takım Rolünü verir
         await üye.add_roles(td_rol, takim_rol)
         
         await interaction.response.send_message(
