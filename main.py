@@ -1,40 +1,42 @@
+import os
+import discord
+from discord.ext import commands
+from discord import app_commands
 from flask import Flask
 from threading import Thread
 
+# --- RENDER ÜÇÜN DİNAMİK PORTLU FLASK SERVER ---
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot is active!"
+    return "Bot 7/24 aktivdir!"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    # Render-in təyin etdiyi dinamik PORT-u oxuyur (yoxdursa 8080 istifadə edir)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
     t.start()
 
-keep_alive()  # Veb serveri başladır
-import os
-import discord
-from discord.ext import commands
-from discord import app_commands
+keep_alive()
+# -----------------------------------------------
 
-# Bot Tanımlamaları
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# SİZİN GÖNDERDİĞİNİZ ROL ID'LERİ
+# ROL ID-LƏRİ
 KAYIT_YETKILISI_ID = 1553693092975083562
 KAYITSIZ_ID = 1553695585423466516
 UYE_ID = 1553695726276714537
 TEKNIK_DIREKTOR_ID = 1553695258490052638
 FUTBOLCU_ID = 1553695512903946303
 
-# TAKIM ID'LERİ
 TAKIM_ROLLER = {
     "Real Madrid": 1553694284425855117,
     "Barcelona": 1553693436991905792,
@@ -53,7 +55,7 @@ async def on_ready():
     await bot.tree.sync()
     print(f'{bot.user} başarıyla aktif oldu!')
 
-# SUNUCUYA YENİ BİRİ KATILDIĞINDA OTOMATİK KAYITSIZ ROLÜ VERME
+# SERVERƏ YENİ BİRİ GİRƏNDƏ OTOMATİK KAYITSIZ ROLÜ VERİLİR
 @bot.event
 async def on_member_join(member):
     kayitsiz_rol = member.guild.get_role(KAYITSIZ_ID)
@@ -64,7 +66,6 @@ async def on_member_join(member):
         except Exception as e:
             print(f"Kayıtsız rolü verilirken hata oluştu: {e}")
 
-# Yetki Kontrol Fonksiyonu
 def yetkili_mi(interaction: discord.Interaction) -> bool:
     yetkili_rol = interaction.guild.get_role(KAYIT_YETKILISI_ID)
     return yetkili_rol in interaction.user.roles
@@ -85,17 +86,14 @@ async def kayit(interaction: discord.Interaction, üye: discord.Member, isim: st
 
     try:
         await üye.edit(nick=isim)
-        
         if kayitsiz_rol in üye.roles:
             await üye.remove_roles(kayitsiz_rol)
-            
         await üye.add_roles(verilecek_rol)
-        
         await interaction.response.send_message(f"✅ {üye.mention} başarıyla **{rol_tipi.name}** olarak kaydoldu!\n👤 **Yeni İsmi:** `{isim}`")
     except Exception as e:
         await interaction.response.send_message(f"❌ Kayıt yapılırken bir hata oluştu: {e}", ephemeral=True)
 
-# 2. TEKNİK DİREKTÖR KAYDI (İsim + Takım Rolü)
+# 2. TEKNİK DİREKTÖR KAYDI
 @bot.tree.command(name="td_kayit", description="Kullanıcıyı Teknik Direktör olarak kaydeder ve takım rolü verir.")
 @app_commands.choices(takim=[
     app_commands.Choice(name="Real Madrid", value="Real Madrid"),
@@ -116,18 +114,13 @@ async def td_kayit(interaction: discord.Interaction, üye: discord.Member, isim:
 
     kayitsiz_rol = interaction.guild.get_role(KAYITSIZ_ID)
     td_rol = interaction.guild.get_role(TEKNIK_DIREKTOR_ID)
-    
-    takim_rol_id = TAKIM_ROLLER.get(takim.value)
-    takim_rol = interaction.guild.get_role(takim_rol_id)
+    takim_rol = interaction.guild.get_role(TAKIM_ROLLER.get(takim.value))
 
     try:
         await üye.edit(nick=isim)
-        
         if kayitsiz_rol in üye.roles:
             await üye.remove_roles(kayitsiz_rol)
-            
         await üye.add_roles(td_rol, takim_rol)
-        
         await interaction.response.send_message(
             f"👔 {üye.mention} başarıyla **{takim.name}** Teknik Direktörü olarak kaydedildi!\n"
             f"👤 **Yeni İsmi:** `{isim}`\n"
